@@ -68,6 +68,9 @@
 ;; Load the project explorer
 (require 'claude-project-explorer nil t)
 
+;; Load the dynamic commands system
+(require 'usura-claude-commands nil t)
+
 ;; Optional components - loaded on demand
 (autoload 'claude-stream-ui-test "claude-stream-ui-test" "Test Claude Stream UI" t)
 (autoload 'claude-stream-ui-demo "claude-stream-ui-test" "Demo Claude Stream UI" t)
@@ -125,19 +128,27 @@
        (format "claude-%s" (format-time-string "%H%M%S"))
        command))))
 
+;; The advice command is now handled by usura-claude-commands.el
+;; This wrapper ensures backward compatibility
 ;;;###autoload
 (defun usura-claude-advice ()
-  "Get Claude's advice about the current buffer."
+  "Get Claude's advice about the current buffer.
+(Compatibility wrapper - actual implementation may be in usura-claude-commands)"
   (interactive)
-  (let* ((content (buffer-substring-no-properties (point-min) (point-max)))
-         (truncated (if (> (length content) 4000)
-                        (concat (substring content 0 4000) "\n[... truncated ...]")
-                      content))
-         (prompt (format "/advice about this content:\n\n%s" truncated))
-         (command (usura-build-claude-command prompt)))
-    (if (and usura-use-org-mode (featurep 'claude-stream-org-ui))
-        (claude-stream-org-ui-create-process "claude-advice" command)
-      (claude-stream-ui-create-process "claude-advice" command))))
+  ;; Try to use the dynamic command if available
+  (if (and (featurep 'usura-claude-commands)
+           (fboundp 'usura-claude-advice))
+      (call-interactively 'usura-claude-advice)
+    ;; Fallback implementation
+    (let* ((content (buffer-substring-no-properties (point-min) (point-max)))
+           (truncated (if (> (length content) 4000)
+                          (concat (substring content 0 4000) "\n[... truncated ...]")
+                        content))
+           (prompt (format "/advice about this content:\n\n%s" truncated))
+           (command (usura-build-claude-command prompt)))
+      (if (and usura-use-org-mode (featurep 'claude-stream-org-ui))
+          (claude-stream-org-ui-create-process "claude-advice" command)
+        (claude-stream-ui-create-process "claude-advice" command)))))
 
 ;;;###autoload
 (defun usura-claude-region (start end)
@@ -204,6 +215,9 @@
     (define-key map (kbd "C-c u o") #'usura-claude-stream-org)
     (define-key map (kbd "C-c u p") #'claude-project-explorer)
     (define-key map (kbd "C-c u f") #'claude-project-open-jsonl-file)
+    ;; Reserve C-c u c for dynamic commands
+    (define-key map (kbd "C-c u C") #'usura-claude-command)
+    (define-key map (kbd "C-c u L") #'usura-claude-commands-list)
     map)
   "Keymap for Usura mode commands.")
 
@@ -294,10 +308,15 @@
   (interactive)
   (require 'claude-stream-ui)
   (require 'claude-stream-org-ui nil t)
+  (require 'claude-project-explorer nil t)
+  (require 'usura-claude-commands nil t)
   (require 'claude-stream-parser)
   (require 'json-stream-parser)
   (require 'claude-stream-ui-test nil t)
   (require 'claude-stream-visual-test nil t)
+  ;; Initialize commands if available
+  (when (fboundp 'usura-claude-commands-initialize)
+    (usura-claude-commands-initialize))
   (message "All Usura components loaded"))
 
 ;;;###autoload

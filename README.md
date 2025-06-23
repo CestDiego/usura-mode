@@ -58,6 +58,9 @@ All commands prompt you for input before sending to Claude:
 | `usura-claude-stream-org` | `C-c u o` | Prompts for query, uses org-mode UI |
 | `claude-project-explorer` | `C-c u p` | Browse Claude project files |
 | `claude-project-open-jsonl-file` | `C-c u f` | Open specific JSONL file |
+| `usura-claude-command` | `C-c u C` | Choose from available Claude commands |
+| `usura-claude-commands-list` | `C-c u L` | List all Claude commands |
+| Dynamic commands | `C-c u c a-z,0-9` | Commands from ~/.claude/commands/ |
 
 ### Examples
 
@@ -142,6 +145,30 @@ Features:
 
 See [CLAUDE-PROJECT-EXPLORER-README.md](CLAUDE-PROJECT-EXPLORER-README.md) for details.
 
+## Dynamic Claude Commands
+
+Automatically generate commands from `~/.claude/commands/` directory:
+
+```elisp
+;; Each .md file becomes a command:
+;; advice.md → M-x usura-claude-advice (C-c u c a)
+;; explain.md → M-x usura-claude-explain (C-c u c b)
+
+;; Choose from available commands
+M-x usura-claude-command RET
+
+;; List all commands with keybindings
+M-x usura-claude-commands-list RET
+```
+
+Features:
+- Automatic function generation from command files
+- Smart keybinding assignment (C-c u c a-z, then 0-9)
+- Context-aware (region, buffer, or prompt)
+- Integrates with org-mode UI
+
+See [CLAUDE-COMMANDS-README.md](CLAUDE-COMMANDS-README.md) for details.
+
 ## Configuration
 
 ```elisp
@@ -170,6 +197,7 @@ usura-mode/
 ├── claude-stream-ui.el        # High-performance UI system
 ├── claude-stream-org-ui.el    # Org-mode based UI system
 ├── claude-project-explorer.el # Browse and view project files
+├── usura-claude-commands.el   # Dynamic command generation
 ├── claude-stream-parser.el    # Legacy parser (compatibility)
 ├── json-stream-parser.el      # General JSON streaming
 └── claude-stream-test.el      # Testing utilities
